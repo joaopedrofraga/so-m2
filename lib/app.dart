@@ -12,6 +12,16 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
+void calcularEnderecoVirtual(int endereco, int tamanhoPagina) {
+  int numeroPagina = endereco ~/ tamanhoPagina;
+  int deslocamento = endereco % tamanhoPagina;
+
+  print('Endereço virtual: $endereco');
+  print('Tamanho da página: $tamanhoPagina bytes');
+  print('Número da página: $numeroPagina');
+  print('Deslocamento na página: $deslocamento');
+}
+
 class _AppState extends State<App> {
   TextEditingController enderecontroller = TextEditingController();
   int numeroBitsSelecionado = 32;
@@ -89,12 +99,34 @@ class _AppState extends State<App> {
                               height: 40,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  debugPrint(
-                                    int.parse(
-                                      enderecontroller.text,
-                                      radix: 16,
-                                    ).toRadixString(2),
-                                  );
+                                  // debugPrint(
+                                  //   int.parse(
+                                  //     enderecontroller.text,
+                                  //     radix: 16,
+                                  //   ).toRadixString(2),
+                                  // );
+                                  try {
+                                    print(
+                                      int.parse(
+                                        enderecontroller.text,
+                                        radix: 16,
+                                      ).toRadixString(2),
+                                    );
+                                    calcularEnderecoVirtual(
+                                      int.parse(
+                                        enderecontroller.text,
+                                        radix: 16,
+                                      ),
+                                      deslocamentoSelecionado,
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Endereço inválido!'),
+                                      ),
+                                    );
+                                    return;
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
