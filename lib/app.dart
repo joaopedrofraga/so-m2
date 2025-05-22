@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:so_m2/core/consultar_endereco_service.dart';
 import 'package:so_m2/presentation/cabecalho_trabalho_widget.dart';
 import 'package:so_m2/presentation/endereco_textformfield_widget.dart';
 import 'package:so_m2/presentation/selecao_numero_bits_widget.dart';
@@ -98,35 +99,17 @@ class _AppState extends State<App> {
                               width: double.infinity,
                               height: 40,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  // debugPrint(
-                                  //   int.parse(
-                                  //     enderecontroller.text,
-                                  //     radix: 16,
-                                  //   ).toRadixString(2),
-                                  // );
-                                  try {
-                                    print(
-                                      int.parse(
-                                        enderecontroller.text,
-                                        radix: 16,
-                                      ).toRadixString(2),
-                                    );
-                                    calcularEnderecoVirtual(
-                                      int.parse(
-                                        enderecontroller.text,
-                                        radix: 16,
-                                      ),
-                                      deslocamentoSelecionado,
-                                    );
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Endereço inválido!'),
-                                      ),
-                                    );
-                                    return;
-                                  }
+                                onPressed: () async {
+                                  // int.parse(
+                                  //   enderecontroller.text,
+                                  //   radix: 16,
+                                  // ).toRadixString(2);
+                                  await ConsultarEnderecoService()
+                                      .consultarEndereco(
+                                        int.parse(enderecontroller.text),
+                                        numeroBitsSelecionado,
+                                        deslocamentoSelecionado,
+                                      );
                                 },
                                 style: ElevatedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
