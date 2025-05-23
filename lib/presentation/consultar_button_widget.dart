@@ -102,7 +102,7 @@ class ConsultarButtonWidget extends StatelessWidget {
             // Se a página virtual está na TLB
           } else if (possuiNaTabelaDePaginas(vpn, dadosPageTable)) {
             // Se a página virtual está na tabela de páginas
-          }
+          } else {}
         },
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
