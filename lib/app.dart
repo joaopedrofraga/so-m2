@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:so_m2/core/consultar_endereco_service.dart';
 import 'package:so_m2/presentation/cabecalho_trabalho_widget.dart';
+import 'package:so_m2/presentation/consultar_button_widget.dart';
 import 'package:so_m2/presentation/endereco_textformfield_widget.dart';
 import 'package:so_m2/presentation/selecao_numero_bits_widget.dart';
 import 'package:so_m2/presentation/selecao_tamanho_deslocamento_widget.dart';
@@ -17,16 +18,16 @@ void calcularEnderecoVirtual(int endereco, int tamanhoPagina) {
   int numeroPagina = endereco ~/ tamanhoPagina;
   int deslocamento = endereco % tamanhoPagina;
 
-  print('Endereço virtual: $endereco');
-  print('Tamanho da página: $tamanhoPagina bytes');
-  print('Número da página: $numeroPagina');
-  print('Deslocamento na página: $deslocamento');
+  // print('Endereço virtual: $endereco');
+  // print('Tamanho da página: $tamanhoPagina bytes');
+  // print('Número da página: $numeroPagina');
+  // print('Deslocamento na página: $deslocamento');
 }
 
 class _AppState extends State<App> {
   TextEditingController enderecontroller = TextEditingController();
   int numeroBitsSelecionado = 32;
-  int deslocamentoSelecionado = 2048;
+  int deslocamentoSelecionado = 256;
 
   void alterarNumeroBits(int novoValor) {
     setState(() {
@@ -95,29 +96,10 @@ class _AppState extends State<App> {
                               enderecontroller: enderecontroller,
                             ),
                             const SizedBox(height: 30),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  // int.parse(
-                                  //   enderecontroller.text,
-                                  //   radix: 16,
-                                  // ).toRadixString(2);
-                                  await ConsultarEnderecoService()
-                                      .consultarEndereco(
-                                        int.parse(enderecontroller.text),
-                                        numeroBitsSelecionado,
-                                        deslocamentoSelecionado,
-                                      );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                ),
-                                child: Text('Consultar'),
-                              ),
+                            ConsultarButtonWidget(
+                              endereco: enderecontroller,
+                              numeroBits: numeroBitsSelecionado,
+                              tamanhoDeslocamento: deslocamentoSelecionado,
                             ),
                           ],
                         ),

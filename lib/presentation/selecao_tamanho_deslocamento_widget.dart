@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // ignore: must_be_immutable
 class SelecaoTamanhoDeslocamentoWidget extends StatelessWidget {
-  List<int> deslocamento = [2048, 8192, 32768];
+  List<int> deslocamento = [256, 1024, 4096];
   int deslocamentoSelecionado;
   Function(int) onChanged;
 

@@ -30,3 +30,17 @@ Future<List<PageTableDataModel>> loadPageTableData() async {
   final lines = contents.split('\n');
   return lines.map((line) => PageTableDataModel.fromTxt(line)).toList();
 }
+
+bool possuiNaTabelaDePaginas(
+  int pagVirtual,
+  List<PageTableDataModel> dadosPageTable,
+) {
+  if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
+    final PageTableDataModel entrada = dadosPageTable[pagVirtual];
+
+    if (entrada.bitValido) {
+      return true;
+    }
+  }
+  return false;
+}

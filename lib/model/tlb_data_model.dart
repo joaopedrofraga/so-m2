@@ -30,3 +30,12 @@ Future<List<TlbDataModel>> loadTlbData() async {
   final lines = contents.split('\n');
   return lines.map((line) => TlbDataModel.fromTxt(line)).toList();
 }
+
+bool possuiNaTlb(int pagVirtual, List<TlbDataModel> dadosTlb) {
+  for (var i = 0; i < dadosTlb.length; i++) {
+    if (dadosTlb[i].numeroPaginaVirtual == pagVirtual) {
+      return true;
+    }
+  }
+  return false;
+}

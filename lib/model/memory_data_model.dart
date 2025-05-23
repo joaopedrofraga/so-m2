@@ -6,13 +6,21 @@ class MemoryDataModel {
   MemoryDataModel({required this.valor});
 
   factory MemoryDataModel.fromTxt(String text) {
-    final parts = text.split(',');
-    return MemoryDataModel(valor: int.parse(parts[0]));
+    //final parts = text.split(',');
+    //print(text);
+    return MemoryDataModel(valor: int.parse(text));
   }
 }
 
-Future<List<MemoryDataModel>> loadMemoryData() async {
-  final file = File('memory.txt');
+Future<List<MemoryDataModel>> loadDataMemory() async {
+  final file = File('data_memory.txt');
+  final contents = await file.readAsString();
+  final lines = contents.split('\n');
+  return lines.map((line) => MemoryDataModel.fromTxt(line)).toList();
+}
+
+Future<List<MemoryDataModel>> loadBackingStore() async {
+  final file = File('backing_store.txt');
   final contents = await file.readAsString();
   final lines = contents.split('\n');
   return lines.map((line) => MemoryDataModel.fromTxt(line)).toList();
