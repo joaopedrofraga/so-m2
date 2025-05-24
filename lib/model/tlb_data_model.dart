@@ -33,7 +33,8 @@ Future<List<TlbDataModel>> loadTlbData() async {
 
 bool possuiNaTlb(int pagVirtual, List<TlbDataModel> dadosTlb) {
   for (var i = 0; i < dadosTlb.length; i++) {
-    if (dadosTlb[i].numeroPaginaVirtual == pagVirtual) {
+    if (dadosTlb[i].numeroPaginaVirtual == pagVirtual &&
+        dadosTlb[i].bitValido) {
       return true;
     }
   }

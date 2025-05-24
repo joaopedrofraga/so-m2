@@ -25,3 +25,13 @@ Future<List<MemoryDataModel>> loadBackingStore() async {
   final lines = contents.split('\n');
   return lines.map((line) => MemoryDataModel.fromTxt(line)).toList();
 }
+
+int getValorNaMemoria(
+  int endereco,
+  List<MemoryDataModel> dadosMemoriaPrincipal,
+) {
+  if (endereco >= 0 && endereco < dadosMemoriaPrincipal.length) {
+    return dadosMemoriaPrincipal[endereco].valor;
+  }
+  return -1;
+}

@@ -27,7 +27,7 @@ class ConsultarButtonWidget extends StatelessWidget {
         onPressed: () async {
           final dadosTlb = await loadTlbData();
           final dadosPageTable = await loadPageTableData();
-          final dadosMemoriaPrincipal = await loadMemoriaData();
+          final dadosMemoriaPrincipal = await loadDataMemory();
           final dadosBackingStore = await loadBackingStore();
 
           if (endereco.text.isEmpty) {
@@ -59,16 +59,16 @@ class ConsultarButtonWidget extends StatelessWidget {
             return;
           }
 
-          int bitsOffset;
+          int bitsDeslocamento;
           if (tamanhoDeslocamento == 256) {
             // 2^8
-            bitsOffset = 8;
+            bitsDeslocamento = 8;
           } else if (tamanhoDeslocamento == 1024) {
             // 2^10
-            bitsOffset = 10;
+            bitsDeslocamento = 10;
           } else if (tamanhoDeslocamento == 4096) {
             // 2^12
-            bitsOffset = 12;
+            bitsDeslocamento = 12;
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -92,17 +92,54 @@ class ConsultarButtonWidget extends StatelessWidget {
             return;
           }
 
-          int offsetMask = (1 << bitsOffset) - 1;
-          int offset = enderecoDecimal & offsetMask;
+          int mascaraDeslocamento = (1 << bitsDeslocamento) - 1;
+          int deslocamento = enderecoDecimal & mascaraDeslocamento;
 
-          int vpn = enderecoDecimal >> bitsOffset;
+          int numeroPaginaVirtual = enderecoDecimal >> bitsDeslocamento;
 
-          if (possuiNaTlb(vpn, dadosTlb)) {
-            print('achou');
+          if (possuiNaTlb(numeroPaginaVirtual, dadosTlb)) {
+            print('TLB HIT!');
             // Se a página virtual está na TLB
-          } else if (possuiNaTabelaDePaginas(vpn, dadosPageTable)) {
+            // Obter o quadro físico da TLB
+            int numeroQuadroFisico =
+                dadosTlb[numeroPaginaVirtual].numeroQuadroFisico;
+            print('Valor: $numeroQuadroFisico');
+          } else if (possuiNaTabelaDePaginas(
+            numeroPaginaVirtual,
+            dadosPageTable,
+          )) {
+            print('TLB MISS!');
+            print('Page Table HIT!');
             // Se a página virtual está na tabela de páginas
-          } else {}
+            // Obter o quadro físico da tabela de páginas
+            int numeroQuadroFisico =
+                dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico;
+            print('Valor: $numeroQuadroFisico');
+          } else {
+            print('TLB MISS!');
+            print('Page FAULT!');
+            // Se a página virtual não está na tabela de páginas
+            // Carregar o quadro físico da backing store
+            int numeroQuadroFisico =
+                dadosBackingStore[numeroPaginaVirtual].valor;
+            if (numeroQuadroFisico != -1) {
+              // Atualizar a tabela de páginas
+              dadosPageTable[numeroPaginaVirtual].bitValido = true;
+              dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico =
+                  numeroQuadroFisico;
+              print('Valor: $numeroQuadroFisico');
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Erro ao acessar a backing store para o quadro físico: $numeroQuadroFisico',
+                  ),
+                ),
+              );
+              return;
+            }
+            print('---------------------------');
+          }
         },
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -111,8 +148,6 @@ class ConsultarButtonWidget extends StatelessWidget {
       ),
     );
   }
-
-  loadMemoriaData() {}
 }
 
 
@@ -120,22 +155,22 @@ class ConsultarButtonWidget extends StatelessWidget {
 
 
  // final resultado =
-          //     'VPN: $vpn (0x${vpn.toRadixString(16).toUpperCase()}), Offset: $offset (0x${offset.toRadixString(16).toUpperCase()})';
+          //     'numeroPaginaVirtual: $numeroPaginaVirtual (0x${numeroPaginaVirtual.toRadixString(16).toUpperCase()}), deslocamento: $deslocamento (0x${deslocamento.toRadixString(16).toUpperCase()})';
           // print('--- Tradução de Endereço ---');
           // print('Endereço Virtual Fornecido: ${endereco.text}');
           // print('Endereço Virtual (Decimal): $enderecoDecimal');
           // print('Sistema de ${numeroBits} bits');
           // print(
-          //   'Tamanho da Página/Deslocamento: $tamanhoDeslocamento Bytes ($bitsOffset bits)',
+          //   'Tamanho da Página/Deslocamento: $tamanhoDeslocamento Bytes ($bitsDeslocamento bits)',
           // );
           // print(
-          //   'Máscara de Offset: 0x${offsetMask.toRadixString(16).toUpperCase()}',
+          //   'Máscara de deslocamento: 0x${mascaraDeslocamento.toRadixString(16).toUpperCase()}',
           // );
-          // print('VPN (Decimal): $vpn');
-          // print('VPN (Hexadecimal): 0x${vpn.toRadixString(16).toUpperCase()}');
-          // print('Offset (Decimal): $offset');
+          // print('numeroPaginaVirtual (Decimal): $numeroPaginaVirtual');
+          // print('numeroPaginaVirtual (Hexadecimal): 0x${numeroPaginaVirtual.toRadixString(16).toUpperCase()}');
+          // print('deslocamento (Decimal): $deslocamento');
           // print(
-          //   'Offset (Hexadecimal): 0x${offset.toRadixString(16).toUpperCase()}',
+          //   'deslocamento (Hexadecimal): 0x${deslocamento.toRadixString(16).toUpperCase()}',
           // );
           // print('--- Fim da Tradução ---');
 
