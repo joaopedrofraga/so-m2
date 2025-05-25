@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:so_m2/core/util_service.dart';
@@ -17,6 +17,87 @@ class ConsultarButtonWidget extends StatelessWidget {
     required this.numeroBits,
     required this.tamanhoDeslocamento,
   });
+
+  void encontrouNaTlb(
+    List<MemoryDataModel> dadosMemoriaPrincipal,
+    TlbDataModel resultadoTlb,
+    int enderecoFisico,
+    BuildContext context,
+  ) {
+    print('TLB HIT!');
+    print('enderecoFisico: $enderecoFisico');
+    final resultado = dadosMemoriaPrincipal[enderecoFisico];
+    print('valor final: ${resultado.valor}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
+          'Valor: ${resultado.valor}',
+        ),
+      ),
+    );
+  }
+
+  void encontrouNaTabelaDePaginas(
+    List<MemoryDataModel> dadosMemoriaPrincipal,
+    List<TlbDataModel> dadosTlb,
+    PageTableDataModel resultadoPageTable,
+    int enderecoFisico,
+    BuildContext context,
+  ) async {
+    print('TLB MISS!');
+    print('Page Table HIT!');
+    final resultado = dadosMemoriaPrincipal[enderecoFisico];
+    print('valor final: ${resultado.valor}');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
+          'Valor: ${resultado.valor}',
+        ),
+      ),
+    );
+
+    atualizarTlb(
+      resultadoPageTable.numeroQuadroFisico,
+      resultadoPageTable.numeroQuadroFisico,
+      dadosTlb,
+    );
+
+    await reescreverTlb(dadosTlb);
+  }
+
+  void buscarNaBackingStore(
+    int numeroPaginaVirtual,
+    int deslocamento,
+    List<MemoryDataModel> dadosBackingStore,
+    List<PageTableDataModel> dadosPageTable,
+    BuildContext context,
+  ) async {
+    print('TLB MISS!');
+    print('Page FAULT!');
+    print('Backing Store: $numeroPaginaVirtual');
+    final resultado = dadosBackingStore[numeroPaginaVirtual];
+    print('valor final: ${resultado.valor}');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Endereço Físico: ${resultado.valor} (0x${resultado.valor.toRadixString(16).toUpperCase()})\n'
+          'Valor: ${resultado.valor}',
+        ),
+      ),
+    );
+
+    atualizarTabelaDePaginasCorrigida(
+      numeroPaginaVirtual,
+      dadosBackingStore[numeroPaginaVirtual].valor,
+      dadosPageTable,
+    );
+
+    await reescreverTabelaDePaginas(dadosPageTable);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,18 +147,9 @@ class ConsultarButtonWidget extends StatelessWidget {
           } else if (tamanhoDeslocamento == 1024) {
             // 2^10
             bitsDeslocamento = 10;
-          } else if (tamanhoDeslocamento == 4096) {
+          } else {
             // 2^12
             bitsDeslocamento = 12;
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Tamanho de deslocamento inválido: $tamanhoDeslocamento Bytes. Use 256, 1024 ou 4096.',
-                ),
-              ),
-            );
-            return;
           }
 
           BigInt maxEnderecoPossivel = (BigInt.one << numeroBits) - BigInt.one;
@@ -94,52 +166,51 @@ class ConsultarButtonWidget extends StatelessWidget {
 
           int mascaraDeslocamento = (1 << bitsDeslocamento) - 1;
           int deslocamento = enderecoDecimal & mascaraDeslocamento;
-
           int numeroPaginaVirtual = enderecoDecimal >> bitsDeslocamento;
 
-          if (possuiNaTlb(numeroPaginaVirtual, dadosTlb)) {
-            print('TLB HIT!');
-            // Se a página virtual está na TLB
-            // Obter o quadro físico da TLB
-            int numeroQuadroFisico =
-                dadosTlb[numeroPaginaVirtual].numeroQuadroFisico;
-            print('Valor: $numeroQuadroFisico');
-          } else if (possuiNaTabelaDePaginas(
+          final resultadoTlb = buscarNaTlb(numeroPaginaVirtual, dadosTlb);
+
+          if (resultadoTlb != null) {
+            int enderecoFisico =
+                (resultadoTlb.numeroQuadroFisico * tamanhoDeslocamento) +
+                deslocamento;
+            encontrouNaTlb(
+              dadosMemoriaPrincipal,
+              resultadoTlb,
+              enderecoFisico,
+              context,
+            );
+            return;
+          }
+
+          final resultadoPageTable = buscarNaTabelaDePaginas(
             numeroPaginaVirtual,
             dadosPageTable,
-          )) {
-            print('TLB MISS!');
-            print('Page Table HIT!');
-            // Se a página virtual está na tabela de páginas
-            // Obter o quadro físico da tabela de páginas
-            int numeroQuadroFisico =
-                dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico;
-            print('Valor: $numeroQuadroFisico');
-          } else {
-            print('TLB MISS!');
-            print('Page FAULT!');
-            // Se a página virtual não está na tabela de páginas
-            // Carregar o quadro físico da backing store
-            int numeroQuadroFisico =
-                dadosBackingStore[numeroPaginaVirtual].valor;
-            if (numeroQuadroFisico != -1) {
-              // Atualizar a tabela de páginas
-              dadosPageTable[numeroPaginaVirtual].bitValido = true;
-              dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico =
-                  numeroQuadroFisico;
-              print('Valor: $numeroQuadroFisico');
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Erro ao acessar a backing store para o quadro físico: $numeroQuadroFisico',
-                  ),
-                ),
-              );
-              return;
-            }
-            print('---------------------------');
+          );
+
+          if (resultadoPageTable != null) {
+            int enderecoFisico =
+                (resultadoPageTable.numeroQuadroFisico * tamanhoDeslocamento) +
+                deslocamento;
+
+            encontrouNaTabelaDePaginas(
+              dadosMemoriaPrincipal,
+              dadosTlb,
+              resultadoPageTable,
+
+              enderecoFisico,
+              context,
+            );
+            return;
           }
+
+          buscarNaBackingStore(
+            numeroPaginaVirtual,
+            deslocamento,
+            dadosBackingStore,
+            dadosPageTable,
+            context,
+          );
         },
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -151,7 +222,49 @@ class ConsultarButtonWidget extends StatelessWidget {
 }
 
 
-
+// if (possuiNaTlb(numeroPaginaVirtual, dadosTlb)) {
+          //   print('TLB HIT!');
+          //   // Se a página virtual está na TLB
+          //   // Obter o quadro físico da TLB
+          //   int numeroQuadroFisico =
+          //       dadosTlb[numeroPaginaVirtual].numeroQuadroFisico;
+          //   print('Valor: $numeroQuadroFisico');
+          // } else if (possuiNaTabelaDePaginas(
+          //   numeroPaginaVirtual,
+          //   dadosPageTable,
+          // )) {
+          //   print('TLB MISS!');
+          //   print('Page Table HIT!');
+          //   // Se a página virtual está na tabela de páginas
+          //   // Obter o quadro físico da tabela de páginas
+          //   int numeroQuadroFisico =
+          //       dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico;
+          //   print('Valor: $numeroQuadroFisico');
+          // } else {
+          //   print('TLB MISS!');
+          //   print('Page FAULT!');
+          //   // Se a página virtual não está na tabela de páginas
+          //   // Carregar o quadro físico da backing store
+          //   int numeroQuadroFisico =
+          //       dadosBackingStore[numeroPaginaVirtual].valor;
+          //   if (numeroQuadroFisico != -1) {
+          //     // Atualizar a tabela de páginas
+          //     dadosPageTable[numeroPaginaVirtual].bitValido = true;
+          //     dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico =
+          //         numeroQuadroFisico;
+          //     print('Valor: $numeroQuadroFisico');
+          //   } else {
+          //     ScaffoldMessenger.of(context).showSnackBar(
+          //       SnackBar(
+          //         content: Text(
+          //           'Erro ao acessar a backing store para o quadro físico: $numeroQuadroFisico',
+          //         ),
+          //       ),
+          //     );
+          //     return;
+          //   }
+          //   print('---------------------------');
+          // }
 
 
  // final resultado =
