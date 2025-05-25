@@ -1,3 +1,5 @@
+import 'package:so_m2/model/page_table_data_model.dart';
+
 class UtilService {
   static final UtilService _singleton = UtilService._internal();
 
@@ -52,4 +54,8 @@ class UtilService {
         (numeroQuadroFisico << bitsDeslocamento) | deslocamento;
     return enderecoFisico;
   }
+
+  Future<void> salvarAlteracoesNoTxt(
+    List<PageTableDataModel> pageTable,
+  ) async {}
 }

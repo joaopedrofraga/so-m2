@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
+
 class PageTableDataModel {
   int numeroQuadroFisico;
   bool bitValido;
@@ -31,16 +33,29 @@ Future<List<PageTableDataModel>> loadPageTableData() async {
   return lines.map((line) => PageTableDataModel.fromTxt(line)).toList();
 }
 
-bool possuiNaTabelaDePaginas(
+PageTableDataModel? buscarNaTabelaDePaginas(
   int pagVirtual,
   List<PageTableDataModel> dadosPageTable,
 ) {
   if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
-    final PageTableDataModel entrada = dadosPageTable[pagVirtual];
-
+    final entrada = dadosPageTable[pagVirtual];
     if (entrada.bitValido) {
-      return true;
+      return entrada;
     }
   }
-  return false;
+  return null;
 }
+
+// bool possuiNaTabelaDePaginas(
+//   int pagVirtual,
+//   List<PageTableDataModel> dadosPageTable,
+// ) {
+//   if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
+//     final PageTableDataModel entrada = dadosPageTable[pagVirtual];
+
+//     if (entrada.bitValido) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
