@@ -43,11 +43,21 @@ class ConsultarButtonWidget extends StatelessWidget {
     List<TlbDataModel> dadosTlb,
     PageTableDataModel resultadoPageTable,
     int enderecoFisico,
+    BuildContext context,
   ) async {
     print('TLB MISS!');
     print('Page Table HIT!');
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
     print('valor final: ${resultado.valor}');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
+          'Valor: ${resultado.valor}',
+        ),
+      ),
+    );
 
     atualizarTlb(
       resultadoPageTable.numeroQuadroFisico,
@@ -62,12 +72,31 @@ class ConsultarButtonWidget extends StatelessWidget {
     int numeroPaginaVirtual,
     int deslocamento,
     List<MemoryDataModel> dadosBackingStore,
-  ) {
+    List<PageTableDataModel> dadosPageTable,
+    BuildContext context,
+  ) async {
     print('TLB MISS!');
     print('Page FAULT!');
     print('Backing Store: $numeroPaginaVirtual');
     final resultado = dadosBackingStore[numeroPaginaVirtual];
     print('valor final: ${resultado.valor}');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Endereço Físico: ${resultado.valor} (0x${resultado.valor.toRadixString(16).toUpperCase()})\n'
+          'Valor: ${resultado.valor}',
+        ),
+      ),
+    );
+
+    atualizarTabelaDePaginasCorrigida(
+      numeroPaginaVirtual,
+      dadosBackingStore[numeroPaginaVirtual].valor,
+      dadosPageTable,
+    );
+
+    await reescreverTabelaDePaginas(dadosPageTable);
   }
 
   @override
@@ -168,7 +197,9 @@ class ConsultarButtonWidget extends StatelessWidget {
               dadosMemoriaPrincipal,
               dadosTlb,
               resultadoPageTable,
+
               enderecoFisico,
+              context,
             );
             return;
           }
@@ -177,6 +208,8 @@ class ConsultarButtonWidget extends StatelessWidget {
             numeroPaginaVirtual,
             deslocamento,
             dadosBackingStore,
+            dadosPageTable,
+            context,
           );
         },
         style: ElevatedButton.styleFrom(

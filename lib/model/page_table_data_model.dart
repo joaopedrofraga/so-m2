@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/widgets.dart';
-
 class PageTableDataModel {
   int numeroQuadroFisico;
   bool bitValido;
@@ -44,6 +42,40 @@ PageTableDataModel? buscarNaTabelaDePaginas(
     }
   }
   return null;
+}
+
+void atualizarTabelaDePaginasCorrigida(
+  int pagVirtual,
+  int quadroFisico,
+  List<PageTableDataModel> dadosPageTable,
+) {
+  if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
+    PageTableDataModel entradaParaAtualizar = dadosPageTable[pagVirtual];
+
+    entradaParaAtualizar.numeroQuadroFisico = quadroFisico;
+    entradaParaAtualizar.bitValido = true;
+    entradaParaAtualizar.bitAcesso = true;
+    entradaParaAtualizar.bitModificado = false;
+  } else {
+    print(
+      "Erro: Número da página virtual $pagVirtual está fora dos limites da tabela de páginas (0-${dadosPageTable.length - 1}).",
+    );
+  }
+}
+
+Future<void> reescreverTabelaDePaginas(
+  List<PageTableDataModel> dadosPageTable,
+) async {
+  final file = File('page_table.txt');
+  final lines =
+      dadosPageTable
+          .map(
+            (entrada) =>
+                '${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.bitAcesso ? 1 : 0},${entrada.bitModificado ? 1 : 0}',
+          )
+          .toList();
+
+  await file.writeAsString(lines.join('\n'));
 }
 
 // bool possuiNaTabelaDePaginas(
