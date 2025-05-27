@@ -5,6 +5,7 @@ import 'package:so_m2/core/util_service.dart';
 import 'package:so_m2/model/memory_data_model.dart';
 import 'package:so_m2/model/page_table_data_model.dart';
 import 'package:so_m2/model/tlb_data_model.dart';
+import 'package:so_m2/presentation/exibirresultados_dialog.dart';
 
 class ConsultarButtonWidget extends StatelessWidget {
   final TextEditingController endereco;
@@ -22,20 +23,21 @@ class ConsultarButtonWidget extends StatelessWidget {
     List<MemoryDataModel> dadosMemoriaPrincipal,
     TlbDataModel resultadoTlb,
     int enderecoFisico,
+    int deslocamento,
     BuildContext context,
   ) {
     print('TLB HIT!');
-    print('enderecoFisico: $enderecoFisico');
+
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
-    print('valor final: ${resultado.valor}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
-          'Valor: ${resultado.valor}',
-        ),
-      ),
-    );
+
+    final mensagem =
+        'TLB HIT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número da Página Virtual: ${resultadoTlb.numeroPaginaVirtual}\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: ${resultado.valor}';
+
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
   void encontrouNaTabelaDePaginas(
@@ -65,141 +67,35 @@ class ConsultarButtonWidget extends StatelessWidget {
       dadosTlb,
     );
 
-    await reescreverTlb(dadosTlb);
+    //await reescreverTlb(dadosTlb);
   }
 
-  // --- Funções Auxiliares (você precisará implementá-las ou adaptar) ---
-
-  // Função para obter um quadro físico: seja um livre ou um após substituição.
-  // Esta é uma função complexa que encapsula a lógica de gerenciamento de quadros.
-  Future<int> obterQuadroFisicoParaNovaPagina({
-    required List<PageTableDataModel> dadosPageTable,
-    required List<MemoryDataModel> dadosMemoriaPrincipal,
-    required List<MemoryDataModel> dadosBackingStore, // Para salvar página suja
-    required int tamanhoDeslocamento, // Tamanho da página
-    required Future<void> Function(List<PageTableDataModel>)
-    persistirTabelaPaginas,
-    // Adicione aqui a função para persistir o backing store se necessário
-    // required Future<void> Function(List<MemoryDataModel>) persistirBackingStore,
-  }) async {
-    int numQuadrosFisicos = dadosMemoriaPrincipal.length ~/ tamanhoDeslocamento;
-    List<bool> quadrosOcupados = List.filled(numQuadrosFisicos, false);
-
-    for (final pte in dadosPageTable) {
-      if (pte.bitValido &&
-          pte.numeroQuadroFisico >= 0 &&
-          pte.numeroQuadroFisico < numQuadrosFisicos) {
-        quadrosOcupados[pte.numeroQuadroFisico] = true;
-      }
-    }
-
-    for (int i = 0; i < numQuadrosFisicos; i++) {
-      if (!quadrosOcupados[i]) {
-        print(" quadro físico livre encontrado: $i");
-        return i; // Encontrou um quadro livre
-      }
-    }
-
-    // Se não há quadros livres, implemente a substituição de página.
-    // Esta é uma SIMPLIFICAÇÃO. Um algoritmo real (ex: Relógio, LRU para frames) seria necessário.
-    // Aqui, vamos escolher a primeira página válida encontrada como vítima (MUITO SIMPLES).
-    print(
-      "Nenhum quadro físico livre. Iniciando substituição de página (lógica simplificada)...",
-    );
-    int vitimaVPN = -1;
-    PageTableDataModel? pteVitima;
-
-    for (int i = 0; i < dadosPageTable.length; i++) {
-      if (dadosPageTable[i].bitValido) {
-        vitimaVPN = i; // Assumindo que o índice da PTE é o VPN
-        pteVitima = dadosPageTable[i];
-        break;
-      }
-    }
-
-    if (pteVitima == null) {
-      // Não deveria acontecer se a memória está "cheia" de páginas válidas.
-      // Indica um problema ou que a memória não estava realmente cheia.
-      throw Exception(
-        "Não foi possível selecionar uma página vítima, mas a memória está cheia.",
-      );
-    }
-
-    int quadroDaVitima = pteVitima.numeroQuadroFisico;
-    print(
-      "Página vítima para substituição: VPN $vitimaVPN no quadro físico $quadroDaVitima",
-    );
-
-    // Se a página vítima estiver suja (modificada), salve-a na backing store.
-    if (pteVitima.bitModificado) {
-      print(
-        "Página vítima (VPN $vitimaVPN) está suja. Escrevendo para backing_store.txt...",
-      );
-      for (int offset = 0; offset < tamanhoDeslocamento; offset++) {
-        int idxMemoria = (quadroDaVitima * tamanhoDeslocamento) + offset;
-        int idxBackingStore =
-            (vitimaVPN * tamanhoDeslocamento) +
-            offset; // VPN como índice da página na BS
-
-        if (idxMemoria < dadosMemoriaPrincipal.length &&
-            idxBackingStore < dadosBackingStore.length) {
-          dadosBackingStore[idxBackingStore] =
-              dadosMemoriaPrincipal[idxMemoria];
-        }
-      }
-      // await persistirBackingStore(dadosBackingStore); // Se necessário
-    }
-
-    // Invalide a entrada da tabela de páginas da vítima.
-    pteVitima.bitValido = false;
-    pteVitima.bitAcesso = false;
-    pteVitima.bitModificado = false;
-    // pteVitima.numeroQuadroFisico = -1; // Opcional, para indicar que não está em um quadro
-
-    await persistirTabelaPaginas(
-      dadosPageTable,
-    ); // Persiste a alteração da PTE da vítima
-
-    return quadroDaVitima; // Retorna o quadro que foi liberado
-  }
-
-  // --- Função Principal Refeita ---
   Future<void> buscarNaBackingStore(
-    // Parâmetros que a função já recebia:
     int numeroPaginaVirtual,
     int deslocamento,
     List<MemoryDataModel> dadosBackingStore,
     List<PageTableDataModel> dadosPageTable,
     BuildContext context,
-    // Parâmetros adicionais necessários:
     List<MemoryDataModel> dadosMemoriaPrincipal,
-    int tamanhoDeslocamento, // Mesmo que o 'tamanhoPagina'
+    int tamanhoDeslocamento,
     List<TlbDataModel> dadosTlb,
-    // Funções para atualizar e persistir TLB e Page Table (já definidas no seu código)
-    // Future<void> Function(List<TlbDataModel>) reescreverTlb,
-    // void Function(int, int, List<TlbDataModel>) atualizarTlb,
-    // Future<void> Function(List<PageTableDataModel>) reescreverTabelaDePaginas,
-    // void Function(int, int, List<PageTableDataModel>) atualizarTabelaDePaginasCorrigida,
   ) async {
     print('TLB MISS!');
     print('Page Table MISS! (Page FAULT)');
     print('Buscando página $numeroPaginaVirtual na Backing Store...');
 
-    // 1. Obter um quadro físico na memória principal para carregar a nova página.
-    //    Isso pode envolver a substituição de uma página existente se a memória estiver cheia.
-    int quadroFisicoEscolhido = await obterQuadroFisicoParaNovaPagina(
-      dadosPageTable: dadosPageTable,
-      dadosMemoriaPrincipal: dadosMemoriaPrincipal,
-      dadosBackingStore: dadosBackingStore,
-      tamanhoDeslocamento: tamanhoDeslocamento,
-      persistirTabelaPaginas:
-          reescreverTabelaDePaginas, // Passando a função de persistência
-    );
+    int quadroFisicoEscolhido = await UtilService()
+        .obterQuadroFisicoParaNovaPagina(
+          dadosPageTable: dadosPageTable,
+          dadosMemoriaPrincipal: dadosMemoriaPrincipal,
+          dadosBackingStore: dadosBackingStore,
+          tamanhoDeslocamento: tamanhoDeslocamento,
+          persistirTabelaPaginas: reescreverTabelaDePaginas,
+        );
     print(
       "Página $numeroPaginaVirtual será carregada no quadro físico $quadroFisicoEscolhido.",
     );
 
-    // 2. Carregar a página inteira da backing store para o quadro físico escolhido na memória principal.
     print(
       "Carregando dados da página $numeroPaginaVirtual do backing store para a memória principal (quadro $quadroFisicoEscolhido)...",
     );
@@ -208,11 +104,8 @@ class ConsultarButtonWidget extends StatelessWidget {
       int indiceMemoriaPrincipal =
           (quadroFisicoEscolhido * tamanhoDeslocamento) + i;
 
-      // Certifique-se de que os índices estão dentro dos limites
       if (indiceBackingStore < dadosBackingStore.length &&
           indiceMemoriaPrincipal < dadosMemoriaPrincipal.length) {
-        // Assumindo que MemoryDataModel pode ser copiado diretamente.
-        // Se for uma classe, você pode precisar de um método clone ou copiar campos.
         dadosMemoriaPrincipal[indiceMemoriaPrincipal] = MemoryDataModel(
           valor: dadosBackingStore[indiceBackingStore].valor,
         );
@@ -220,7 +113,6 @@ class ConsultarButtonWidget extends StatelessWidget {
         print(
           "Erro: Índice fora dos limites ao copiar da backing store para a memória principal.",
         );
-        // Tratar erro adequadamente
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Erro ao carregar página: índice fora dos limites."),
@@ -229,35 +121,24 @@ class ConsultarButtonWidget extends StatelessWidget {
         return;
       }
     }
-    // Se 'dadosMemoriaPrincipal' representa um arquivo que precisa ser salvo, faça aqui.
+    reescreverDataMemory(dadosMemoriaPrincipal);
 
-    // 3. Atualizar a Tabela de Páginas para a página recém-carregada.
     print(
       "Atualizando tabela de páginas para VPN $numeroPaginaVirtual -> QF $quadroFisicoEscolhido.",
     );
     atualizarTabelaDePaginasCorrigida(
-      // Usa a versão corrigida da sua função
       numeroPaginaVirtual,
       quadroFisicoEscolhido,
       dadosPageTable,
     );
-    await reescreverTabelaDePaginas(
-      dadosPageTable,
-    ); // Persiste a tabela de páginas
+    //await reescreverTabelaDePaginas(dadosPageTable);
 
-    // 4. Atualizar a TLB com a nova tradução.
     print(
       "Atualizando TLB para VPN $numeroPaginaVirtual -> QF $quadroFisicoEscolhido.",
     );
-    atualizarTlb(
-      // Sua função de atualizar TLB
-      numeroPaginaVirtual,
-      quadroFisicoEscolhido,
-      dadosTlb,
-    );
-    await reescreverTlb(dadosTlb); // Sua função de persistir TLB
+    atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
+    //await reescreverTlb(dadosTlb);
 
-    // 5. Calcular o endereço físico final e ler o valor do dado solicitado.
     int enderecoFisicoFinal =
         (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
     String valorFinalLido = "ERRO_LEITURA";
@@ -274,7 +155,6 @@ class ConsultarButtonWidget extends StatelessWidget {
       "Valor final lido da memória principal no endereço físico $enderecoFisicoFinal: $valorFinalLido",
     );
 
-    // 6. Exibir resultados.
     String mensagem =
         "Page Fault Atendido!\n"
         "Página $numeroPaginaVirtual carregada da Backing Store.\n"
@@ -366,6 +246,7 @@ class ConsultarButtonWidget extends StatelessWidget {
               dadosMemoriaPrincipal,
               resultadoTlb,
               enderecoFisico,
+              deslocamento,
               context,
             );
             return;
@@ -392,19 +273,15 @@ class ConsultarButtonWidget extends StatelessWidget {
             return;
           }
 
-          // Dentro do onPressed em ConsultarButtonWidget:
-          // ... após verificar que é TLB miss e Page Table miss ...
           await buscarNaBackingStore(
             numeroPaginaVirtual,
             deslocamento,
             dadosBackingStore,
             dadosPageTable,
             context,
-            // Novos parâmetros:
             dadosMemoriaPrincipal,
-            tamanhoDeslocamento, // Já calculado no seu onPressed
+            tamanhoDeslocamento,
             dadosTlb,
-            // As funções de reescrita/atualização são globais ou precisam ser passadas se não forem
           );
         },
         style: ElevatedButton.styleFrom(
