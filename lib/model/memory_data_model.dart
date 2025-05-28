@@ -35,3 +35,21 @@ int getValorNaMemoria(
   }
   return -1;
 }
+
+Future<void> reescreverDataMemory(
+  List<MemoryDataModel> dadosMemoriaPrincipal,
+) async {
+  final file = File('data_memory.txt');
+  final contents = dadosMemoriaPrincipal
+      .map((d) => d.valor.toString())
+      .join('\n');
+  await file.writeAsString(contents);
+}
+
+Future<void> reescreverBackingStore(
+  List<MemoryDataModel> dadosBackingStore,
+) async {
+  final file = File('backing_store.txt');
+  final contents = dadosBackingStore.map((d) => d.valor.toString()).join('\n');
+  await file.writeAsString(contents);
+}

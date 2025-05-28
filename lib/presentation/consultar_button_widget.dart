@@ -1,10 +1,9 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:so_m2/core/util_service.dart';
 import 'package:so_m2/model/memory_data_model.dart';
 import 'package:so_m2/model/page_table_data_model.dart';
 import 'package:so_m2/model/tlb_data_model.dart';
+import 'package:so_m2/presentation/exibirresultados_dialog.dart';
 
 class ConsultarButtonWidget extends StatelessWidget {
   final TextEditingController endereco;
@@ -22,20 +21,19 @@ class ConsultarButtonWidget extends StatelessWidget {
     List<MemoryDataModel> dadosMemoriaPrincipal,
     TlbDataModel resultadoTlb,
     int enderecoFisico,
+    int deslocamento,
     BuildContext context,
   ) {
-    print('TLB HIT!');
-    print('enderecoFisico: $enderecoFisico');
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
-    print('valor final: ${resultado.valor}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
-          'Valor: ${resultado.valor}',
-        ),
-      ),
-    );
+
+    final mensagem =
+        'TLB HIT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: ${resultado.valor}';
+
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
   void encontrouNaTabelaDePaginas(
@@ -43,21 +41,10 @@ class ConsultarButtonWidget extends StatelessWidget {
     List<TlbDataModel> dadosTlb,
     PageTableDataModel resultadoPageTable,
     int enderecoFisico,
+    int deslocamento,
     BuildContext context,
   ) async {
-    print('TLB MISS!');
-    print('Page Table HIT!');
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
-    print('valor final: ${resultado.valor}');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
-          'Valor: ${resultado.valor}',
-        ),
-      ),
-    );
 
     atualizarTlb(
       resultadoPageTable.numeroQuadroFisico,
@@ -66,37 +53,80 @@ class ConsultarButtonWidget extends StatelessWidget {
     );
 
     await reescreverTlb(dadosTlb);
+
+    final mensagem =
+        'TLB HIT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número da Página Virtual: ${resultadoPageTable.numeroQuadroFisico}\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: ${resultado.valor}';
+
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
-  void buscarNaBackingStore(
+  Future<void> buscarNaBackingStore(
     int numeroPaginaVirtual,
     int deslocamento,
     List<MemoryDataModel> dadosBackingStore,
     List<PageTableDataModel> dadosPageTable,
     BuildContext context,
+    List<MemoryDataModel> dadosMemoriaPrincipal,
+    int tamanhoDeslocamento,
+    List<TlbDataModel> dadosTlb,
   ) async {
-    print('TLB MISS!');
-    print('Page FAULT!');
-    print('Backing Store: $numeroPaginaVirtual');
-    final resultado = dadosBackingStore[numeroPaginaVirtual];
-    print('valor final: ${resultado.valor}');
+    int quadroFisicoEscolhido = await UtilService()
+        .obterQuadroFisicoParaNovaPagina(
+          dadosPageTable: dadosPageTable,
+          dadosMemoriaPrincipal: dadosMemoriaPrincipal,
+          dadosBackingStore: dadosBackingStore,
+          tamanhoDeslocamento: tamanhoDeslocamento,
+          persistirTabelaPaginas: reescreverTabelaDePaginas,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Endereço Físico: ${resultado.valor} (0x${resultado.valor.toRadixString(16).toUpperCase()})\n'
-          'Valor: ${resultado.valor}',
-        ),
-      ),
-    );
+    for (int i = 0; i < tamanhoDeslocamento; i++) {
+      int indiceBackingStore = (numeroPaginaVirtual * tamanhoDeslocamento) + i;
+      int indiceMemoriaPrincipal =
+          (quadroFisicoEscolhido * tamanhoDeslocamento) + i;
+
+      if (indiceBackingStore < dadosBackingStore.length &&
+          indiceMemoriaPrincipal < dadosMemoriaPrincipal.length) {
+        dadosMemoriaPrincipal[indiceMemoriaPrincipal] = MemoryDataModel(
+          valor: dadosBackingStore[indiceBackingStore].valor,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Erro ao carregar página: índice fora dos limites."),
+          ),
+        );
+        return;
+      }
+    }
+    reescreverDataMemory(dadosMemoriaPrincipal);
 
     atualizarTabelaDePaginasCorrigida(
       numeroPaginaVirtual,
-      dadosBackingStore[numeroPaginaVirtual].valor,
+      quadroFisicoEscolhido,
       dadosPageTable,
     );
-
     await reescreverTabelaDePaginas(dadosPageTable);
+
+    atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
+    await reescreverTlb(dadosTlb);
+
+    int enderecoFisicoFinal =
+        (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
+    final valorFinalLido = dadosMemoriaPrincipal[enderecoFisicoFinal].valor;
+
+    final mensagem =
+        'TLB MISS!\n'
+        'PAGE FAULT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número do Quadro Físico: $enderecoFisicoFinal\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: $valorFinalLido';
+
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
   @override
@@ -178,6 +208,7 @@ class ConsultarButtonWidget extends StatelessWidget {
               dadosMemoriaPrincipal,
               resultadoTlb,
               enderecoFisico,
+              deslocamento,
               context,
             );
             return;
@@ -197,19 +228,22 @@ class ConsultarButtonWidget extends StatelessWidget {
               dadosMemoriaPrincipal,
               dadosTlb,
               resultadoPageTable,
-
               enderecoFisico,
+              deslocamento,
               context,
             );
             return;
           }
 
-          buscarNaBackingStore(
+          await buscarNaBackingStore(
             numeroPaginaVirtual,
             deslocamento,
             dadosBackingStore,
             dadosPageTable,
             context,
+            dadosMemoriaPrincipal,
+            tamanhoDeslocamento,
+            dadosTlb,
           );
         },
         style: ElevatedButton.styleFrom(
@@ -220,76 +254,3 @@ class ConsultarButtonWidget extends StatelessWidget {
     );
   }
 }
-
-
-// if (possuiNaTlb(numeroPaginaVirtual, dadosTlb)) {
-          //   print('TLB HIT!');
-          //   // Se a página virtual está na TLB
-          //   // Obter o quadro físico da TLB
-          //   int numeroQuadroFisico =
-          //       dadosTlb[numeroPaginaVirtual].numeroQuadroFisico;
-          //   print('Valor: $numeroQuadroFisico');
-          // } else if (possuiNaTabelaDePaginas(
-          //   numeroPaginaVirtual,
-          //   dadosPageTable,
-          // )) {
-          //   print('TLB MISS!');
-          //   print('Page Table HIT!');
-          //   // Se a página virtual está na tabela de páginas
-          //   // Obter o quadro físico da tabela de páginas
-          //   int numeroQuadroFisico =
-          //       dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico;
-          //   print('Valor: $numeroQuadroFisico');
-          // } else {
-          //   print('TLB MISS!');
-          //   print('Page FAULT!');
-          //   // Se a página virtual não está na tabela de páginas
-          //   // Carregar o quadro físico da backing store
-          //   int numeroQuadroFisico =
-          //       dadosBackingStore[numeroPaginaVirtual].valor;
-          //   if (numeroQuadroFisico != -1) {
-          //     // Atualizar a tabela de páginas
-          //     dadosPageTable[numeroPaginaVirtual].bitValido = true;
-          //     dadosPageTable[numeroPaginaVirtual].numeroQuadroFisico =
-          //         numeroQuadroFisico;
-          //     print('Valor: $numeroQuadroFisico');
-          //   } else {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       SnackBar(
-          //         content: Text(
-          //           'Erro ao acessar a backing store para o quadro físico: $numeroQuadroFisico',
-          //         ),
-          //       ),
-          //     );
-          //     return;
-          //   }
-          //   print('---------------------------');
-          // }
-
-
- // final resultado =
-          //     'numeroPaginaVirtual: $numeroPaginaVirtual (0x${numeroPaginaVirtual.toRadixString(16).toUpperCase()}), deslocamento: $deslocamento (0x${deslocamento.toRadixString(16).toUpperCase()})';
-          // print('--- Tradução de Endereço ---');
-          // print('Endereço Virtual Fornecido: ${endereco.text}');
-          // print('Endereço Virtual (Decimal): $enderecoDecimal');
-          // print('Sistema de ${numeroBits} bits');
-          // print(
-          //   'Tamanho da Página/Deslocamento: $tamanhoDeslocamento Bytes ($bitsDeslocamento bits)',
-          // );
-          // print(
-          //   'Máscara de deslocamento: 0x${mascaraDeslocamento.toRadixString(16).toUpperCase()}',
-          // );
-          // print('numeroPaginaVirtual (Decimal): $numeroPaginaVirtual');
-          // print('numeroPaginaVirtual (Hexadecimal): 0x${numeroPaginaVirtual.toRadixString(16).toUpperCase()}');
-          // print('deslocamento (Decimal): $deslocamento');
-          // print(
-          //   'deslocamento (Hexadecimal): 0x${deslocamento.toRadixString(16).toUpperCase()}',
-          // );
-          // print('--- Fim da Tradução ---');
-
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(
-          //     content: Text(resultado),
-          //     duration: const Duration(seconds: 5), // Duração maior para ler
-          //   ),
-          // );

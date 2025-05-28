@@ -3,13 +3,13 @@ import 'dart:io';
 class PageTableDataModel {
   int numeroQuadroFisico;
   bool bitValido;
-  bool bitAcesso;
+  bool possuiSegundaChance;
   bool bitModificado;
 
   PageTableDataModel({
     required this.numeroQuadroFisico,
     required this.bitValido,
-    required this.bitAcesso,
+    required this.possuiSegundaChance,
     required this.bitModificado,
   });
 
@@ -18,7 +18,7 @@ class PageTableDataModel {
     return PageTableDataModel(
       numeroQuadroFisico: int.parse(parts[0]),
       bitValido: parts[1] == '1',
-      bitAcesso: parts[2] == '1',
+      possuiSegundaChance: parts[2] == '1',
       bitModificado: parts[3] == '1',
     );
   }
@@ -37,7 +37,8 @@ PageTableDataModel? buscarNaTabelaDePaginas(
 ) {
   if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
     final entrada = dadosPageTable[pagVirtual];
-    if (entrada.bitValido) {
+    if (entrada.bitValido && !entrada.possuiSegundaChance) {
+      entrada.possuiSegundaChance = true;
       return entrada;
     }
   }
@@ -54,7 +55,7 @@ void atualizarTabelaDePaginasCorrigida(
 
     entradaParaAtualizar.numeroQuadroFisico = quadroFisico;
     entradaParaAtualizar.bitValido = true;
-    entradaParaAtualizar.bitAcesso = true;
+    entradaParaAtualizar.possuiSegundaChance = true;
     entradaParaAtualizar.bitModificado = false;
   } else {
     print(
@@ -71,7 +72,7 @@ Future<void> reescreverTabelaDePaginas(
       dadosPageTable
           .map(
             (entrada) =>
-                '${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.bitAcesso ? 1 : 0},${entrada.bitModificado ? 1 : 0}',
+                '${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.possuiSegundaChance ? 1 : 0},${entrada.bitModificado ? 1 : 0}',
           )
           .toList();
 

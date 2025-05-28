@@ -14,16 +14,6 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-void calcularEnderecoVirtual(int endereco, int tamanhoPagina) {
-  int numeroPagina = endereco ~/ tamanhoPagina;
-  int deslocamento = endereco % tamanhoPagina;
-
-  // print('Endereço virtual: $endereco');
-  // print('Tamanho da página: $tamanhoPagina bytes');
-  // print('Número da página: $numeroPagina');
-  // print('Deslocamento na página: $deslocamento');
-}
-
 class _AppState extends State<App> {
   TextEditingController enderecontroller = TextEditingController();
   int numeroBitsSelecionado = 32;
