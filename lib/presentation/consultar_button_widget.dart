@@ -67,7 +67,7 @@ class ConsultarButtonWidget extends StatelessWidget {
       dadosTlb,
     );
 
-    //await reescreverTlb(dadosTlb);
+    await reescreverTlb(dadosTlb);
   }
 
   Future<void> buscarNaBackingStore(
@@ -131,13 +131,13 @@ class ConsultarButtonWidget extends StatelessWidget {
       quadroFisicoEscolhido,
       dadosPageTable,
     );
-    //await reescreverTabelaDePaginas(dadosPageTable);
+    await reescreverTabelaDePaginas(dadosPageTable);
 
     print(
       "Atualizando TLB para VPN $numeroPaginaVirtual -> QF $quadroFisicoEscolhido.",
     );
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
-    //await reescreverTlb(dadosTlb);
+    await reescreverTlb(dadosTlb);
 
     int enderecoFisicoFinal =
         (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
