@@ -80,7 +80,6 @@ class ConsultarButtonWidget extends StatelessWidget {
           dadosMemoriaPrincipal: dadosMemoriaPrincipal,
           dadosBackingStore: dadosBackingStore,
           tamanhoDeslocamento: tamanhoDeslocamento,
-          persistirTabelaPaginas: reescreverTabelaDePaginas,
         );
 
     for (int i = 0; i < tamanhoDeslocamento; i++) {
