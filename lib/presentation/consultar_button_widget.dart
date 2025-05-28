@@ -33,7 +33,7 @@ class ConsultarButtonWidget extends StatelessWidget {
     final mensagem =
         'TLB HIT!\n'
         'Endereço Virtual: ${endereco.text}\n'
-        'Número da Página Virtual: ${resultadoTlb.numeroPaginaVirtual}\n'
+        'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
         'Valor: ${resultado.valor}';
 
@@ -45,21 +45,13 @@ class ConsultarButtonWidget extends StatelessWidget {
     List<TlbDataModel> dadosTlb,
     PageTableDataModel resultadoPageTable,
     int enderecoFisico,
+    int deslocamento,
     BuildContext context,
   ) async {
     print('TLB MISS!');
     print('Page Table HIT!');
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
     print('valor final: ${resultado.valor}');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Endereço Físico: $enderecoFisico (0x${enderecoFisico.toRadixString(16).toUpperCase()})\n'
-          'Valor: ${resultado.valor}',
-        ),
-      ),
-    );
 
     atualizarTlb(
       resultadoPageTable.numeroQuadroFisico,
@@ -68,6 +60,15 @@ class ConsultarButtonWidget extends StatelessWidget {
     );
 
     await reescreverTlb(dadosTlb);
+
+    final mensagem =
+        'TLB HIT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número da Página Virtual: ${resultadoPageTable.numeroQuadroFisico}\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: ${resultado.valor}';
+
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
   Future<void> buscarNaBackingStore(
@@ -110,9 +111,6 @@ class ConsultarButtonWidget extends StatelessWidget {
           valor: dadosBackingStore[indiceBackingStore].valor,
         );
       } else {
-        print(
-          "Erro: Índice fora dos limites ao copiar da backing store para a memória principal.",
-        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Erro ao carregar página: índice fora dos limites."),
@@ -123,9 +121,6 @@ class ConsultarButtonWidget extends StatelessWidget {
     }
     reescreverDataMemory(dadosMemoriaPrincipal);
 
-    print(
-      "Atualizando tabela de páginas para VPN $numeroPaginaVirtual -> QF $quadroFisicoEscolhido.",
-    );
     atualizarTabelaDePaginasCorrigida(
       numeroPaginaVirtual,
       quadroFisicoEscolhido,
@@ -133,29 +128,22 @@ class ConsultarButtonWidget extends StatelessWidget {
     );
     await reescreverTabelaDePaginas(dadosPageTable);
 
-    print(
-      "Atualizando TLB para VPN $numeroPaginaVirtual -> QF $quadroFisicoEscolhido.",
-    );
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
     await reescreverTlb(dadosTlb);
 
     int enderecoFisicoFinal =
         (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
     final valorFinalLido = dadosMemoriaPrincipal[enderecoFisicoFinal].valor;
-    print(
-      "Valor final lido da memória principal no endereço físico $enderecoFisicoFinal: $valorFinalLido",
-    );
 
-    String mensagem =
-        "Page Fault Atendido!\n"
-        "Página $numeroPaginaVirtual carregada da Backing Store.\n"
-        "Alocada no Quadro Físico: $quadroFisicoEscolhido\n"
-        "Endereço Físico do dado: $enderecoFisicoFinal (0x${enderecoFisicoFinal.toRadixString(16).toUpperCase()})\n"
-        "Valor lido: $valorFinalLido";
+    final mensagem =
+        'TLB MISS!\n'
+        'PAGE FAULT!\n'
+        'Endereço Virtual: ${endereco.text}\n'
+        'Número do Quadro Físico: $enderecoFisicoFinal\n'
+        'Deslocamento: $deslocamento\n'
+        'Valor: $valorFinalLido';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensagem), duration: const Duration(seconds: 5)),
-    );
+    ExibirResultadosDialog.show(context, mensagem: mensagem);
   }
 
   @override
@@ -257,8 +245,8 @@ class ConsultarButtonWidget extends StatelessWidget {
               dadosMemoriaPrincipal,
               dadosTlb,
               resultadoPageTable,
-
               enderecoFisico,
+              deslocamento,
               context,
             );
             return;

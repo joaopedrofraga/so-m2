@@ -25,6 +25,12 @@ class ExibirResultadosDialog {
                     ],
                   ),
                   const Divider(),
+                  Text(
+                    mensagem,
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  const Divider(),
+                  const SizedBox(),
                 ],
               ),
             ),
