@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:so_m2/core/util_service.dart';
 import 'package:so_m2/model/memory_data_model.dart';
@@ -26,8 +24,6 @@ class ConsultarButtonWidget extends StatelessWidget {
     int deslocamento,
     BuildContext context,
   ) {
-    print('TLB HIT!');
-
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
 
     final mensagem =
@@ -48,10 +44,7 @@ class ConsultarButtonWidget extends StatelessWidget {
     int deslocamento,
     BuildContext context,
   ) async {
-    print('TLB MISS!');
-    print('Page Table HIT!');
     final resultado = dadosMemoriaPrincipal[enderecoFisico];
-    print('valor final: ${resultado.valor}');
 
     atualizarTlb(
       resultadoPageTable.numeroQuadroFisico,
@@ -81,10 +74,6 @@ class ConsultarButtonWidget extends StatelessWidget {
     int tamanhoDeslocamento,
     List<TlbDataModel> dadosTlb,
   ) async {
-    print('TLB MISS!');
-    print('Page Table MISS! (Page FAULT)');
-    print('Buscando página $numeroPaginaVirtual na Backing Store...');
-
     int quadroFisicoEscolhido = await UtilService()
         .obterQuadroFisicoParaNovaPagina(
           dadosPageTable: dadosPageTable,
@@ -93,13 +82,7 @@ class ConsultarButtonWidget extends StatelessWidget {
           tamanhoDeslocamento: tamanhoDeslocamento,
           persistirTabelaPaginas: reescreverTabelaDePaginas,
         );
-    print(
-      "Página $numeroPaginaVirtual será carregada no quadro físico $quadroFisicoEscolhido.",
-    );
 
-    print(
-      "Carregando dados da página $numeroPaginaVirtual do backing store para a memória principal (quadro $quadroFisicoEscolhido)...",
-    );
     for (int i = 0; i < tamanhoDeslocamento; i++) {
       int indiceBackingStore = (numeroPaginaVirtual * tamanhoDeslocamento) + i;
       int indiceMemoriaPrincipal =
