@@ -141,16 +141,7 @@ class ConsultarButtonWidget extends StatelessWidget {
 
     int enderecoFisicoFinal =
         (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
-    String valorFinalLido = "ERRO_LEITURA";
-
-    if (enderecoFisicoFinal < dadosMemoriaPrincipal.length) {
-      valorFinalLido =
-          dadosMemoriaPrincipal[enderecoFisicoFinal].valor.toString();
-    } else {
-      print(
-        "Erro: Endereço físico final $enderecoFisicoFinal fora dos limites da memória principal.",
-      );
-    }
+    final valorFinalLido = dadosMemoriaPrincipal[enderecoFisicoFinal].valor;
     print(
       "Valor final lido da memória principal no endereço físico $enderecoFisicoFinal: $valorFinalLido",
     );

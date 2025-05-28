@@ -25,37 +25,6 @@ class UtilService {
     }
   }
 
-  // int calcularEnderecoFisicoBitwise({
-  //   required int numeroQuadroFisico,
-  //   required int deslocamento,
-  //   required int bitsDeslocamento,
-  // }) {
-  //   if (numeroQuadroFisico < 0) {
-  //     throw ArgumentError(
-  //       'O Número do Quadro Físico (PFN) não pode ser negativo. PFN recebido: $numeroQuadroFisico',
-  //     );
-  //   }
-  //   if (deslocamento < 0) {
-  //     throw ArgumentError(
-  //       'O deslocamento (offset) não pode ser negativo. Offset recebido: $deslocamento',
-  //     );
-  //   }
-  //   if (bitsDeslocamento <= 0) {
-  //     throw ArgumentError(
-  //       'O número de bits de offset deve ser positivo. Recebido: $bitsDeslocamento',
-  //     );
-  //   }
-  //   if (deslocamento >= (1 << bitsDeslocamento)) {
-  //     throw ArgumentError(
-  //       'O deslocamento (offset) ($deslocamento) excede o limite para $bitsDeslocamento bits de offset (Máx: ${(1 << bitsDeslocamento) - 1}).',
-  //     );
-  //   }
-
-  //   int enderecoFisico =
-  //       (numeroQuadroFisico << bitsDeslocamento) | deslocamento;
-  //   return enderecoFisico;
-  // }
-
   Future<int> obterQuadroFisicoParaNovaPagina({
     required List<PageTableDataModel> dadosPageTable,
     required List<MemoryDataModel> dadosMemoriaPrincipal,
@@ -124,6 +93,6 @@ class UtilService {
 
     await persistirTabelaPaginas(dadosPageTable);
 
-    return quadroDaVitima; // Retorna o quadro que foi liberado
+    return quadroDaVitima;
   }
 }

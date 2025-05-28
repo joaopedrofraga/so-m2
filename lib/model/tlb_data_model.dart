@@ -4,13 +4,13 @@ class TlbDataModel {
   int numeroPaginaVirtual;
   int numeroQuadroFisico;
   bool bitValido;
-  int contadorLRU;
+  bool possuiSegundaChance;
 
   TlbDataModel({
     required this.numeroPaginaVirtual,
     required this.numeroQuadroFisico,
     required this.bitValido,
-    required this.contadorLRU,
+    required this.possuiSegundaChance,
   });
 
   factory TlbDataModel.fromTxt(String text) {
@@ -19,7 +19,7 @@ class TlbDataModel {
       numeroPaginaVirtual: int.parse(parts[0]),
       numeroQuadroFisico: int.parse(parts[1]),
       bitValido: parts[2] == '1',
-      contadorLRU: int.parse(parts[3]),
+      possuiSegundaChance: parts[3] == '1',
     );
   }
 }
@@ -34,10 +34,8 @@ Future<List<TlbDataModel>> loadTlbData() async {
 TlbDataModel? buscarNaTlb(int pagVirtual, List<TlbDataModel> dadosTlb) {
   for (var entrada in dadosTlb) {
     if (entrada.numeroPaginaVirtual == pagVirtual && entrada.bitValido) {
-      entrada.contadorLRU = 0;
+      entrada.possuiSegundaChance = true;
       return entrada;
-    } else {
-      entrada.contadorLRU++;
     }
   }
   return null;
@@ -48,22 +46,22 @@ void atualizarTlb(
   int quadroFisico,
   List<TlbDataModel> dadosTlb,
 ) {
-  TlbDataModel vitima = dadosTlb.first;
+  TlbDataModel vitima = dadosTlb.firstWhere((dado) => dado.bitValido);
   for (var entrada in dadosTlb) {
     if (entrada.numeroPaginaVirtual == -1) {
       entrada.numeroPaginaVirtual = pagVirtual;
       entrada.numeroQuadroFisico = quadroFisico;
       entrada.bitValido = true;
-      entrada.contadorLRU = 0;
+      entrada.possuiSegundaChance = true;
       return;
-    } else if (entrada.contadorLRU > vitima.contadorLRU) {
+    } else if (!entrada.possuiSegundaChance) {
       vitima = entrada;
     }
   }
   vitima.numeroPaginaVirtual = pagVirtual;
   vitima.numeroQuadroFisico = quadroFisico;
   vitima.bitValido = true;
-  vitima.contadorLRU = 0;
+  vitima.possuiSegundaChance = true;
 }
 
 Future<void> reescreverTlb(List<TlbDataModel> dadosTlb) async {
@@ -71,7 +69,7 @@ Future<void> reescreverTlb(List<TlbDataModel> dadosTlb) async {
   final sink = file.openWrite();
   for (var entrada in dadosTlb) {
     sink.write(
-      '${entrada.numeroPaginaVirtual},${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.contadorLRU}',
+      '${entrada.numeroPaginaVirtual},${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.possuiSegundaChance ? 1 : 0}',
     );
     if (entrada != dadosTlb.last) {
       sink.write('\n');
