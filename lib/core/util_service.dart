@@ -88,7 +88,7 @@ class UtilService {
     }
 
     entradaVitima.bitValido = false;
-    entradaVitima.bitAcesso = false;
+    entradaVitima.possuiSegundaChance = true;
     entradaVitima.bitModificado = false;
 
     await persistirTabelaPaginas(dadosPageTable);
