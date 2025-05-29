@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:so_m2/core/exibirresultados_service.dart';
 import 'package:so_m2/core/util_service.dart';
