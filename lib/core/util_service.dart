@@ -30,8 +30,6 @@ class UtilService {
     required List<MemoryDataModel> dadosMemoriaPrincipal,
     required List<MemoryDataModel> dadosBackingStore,
     required int tamanhoDeslocamento,
-    required Future<void> Function(List<PageTableDataModel>)
-    persistirTabelaPaginas,
   }) async {
     int numQuadrosFisicos = dadosMemoriaPrincipal.length ~/ tamanhoDeslocamento;
     List<bool> quadrosOcupados = List.filled(numQuadrosFisicos, false);
@@ -91,7 +89,7 @@ class UtilService {
     entradaVitima.possuiSegundaChance = true;
     entradaVitima.bitModificado = false;
 
-    await persistirTabelaPaginas(dadosPageTable);
+    await reescreverTabelaDePaginas(dadosPageTable);
 
     return quadroDaVitima;
   }

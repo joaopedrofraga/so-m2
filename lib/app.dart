@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:so_m2/core/consultar_endereco_service.dart';
 import 'package:so_m2/presentation/cabecalho_trabalho_widget.dart';
 import 'package:so_m2/presentation/consultar_button_widget.dart';
 import 'package:so_m2/presentation/endereco_textformfield_widget.dart';

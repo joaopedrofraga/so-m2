@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:so_m2/core/util_service.dart';
 import 'package:so_m2/model/memory_data_model.dart';
@@ -80,7 +82,6 @@ class ConsultarButtonWidget extends StatelessWidget {
           dadosMemoriaPrincipal: dadosMemoriaPrincipal,
           dadosBackingStore: dadosBackingStore,
           tamanhoDeslocamento: tamanhoDeslocamento,
-          persistirTabelaPaginas: reescreverTabelaDePaginas,
         );
 
     for (int i = 0; i < tamanhoDeslocamento; i++) {
@@ -112,6 +113,7 @@ class ConsultarButtonWidget extends StatelessWidget {
     await reescreverTabelaDePaginas(dadosPageTable);
 
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
+
     await reescreverTlb(dadosTlb);
 
     int enderecoFisicoFinal =
