@@ -6,8 +6,6 @@ class MemoryDataModel {
   MemoryDataModel({required this.valor});
 
   factory MemoryDataModel.fromTxt(String text) {
-    //final parts = text.split(',');
-    //print(text);
     return MemoryDataModel(valor: int.parse(text));
   }
 }

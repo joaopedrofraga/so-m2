@@ -18,7 +18,6 @@ class ConsultarButtonWidget extends StatelessWidget {
     required this.numeroBits,
     required this.tamanhoDeslocamento,
   });
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(

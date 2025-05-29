@@ -108,8 +108,12 @@ class UtilService {
       }
     }
 
-    throw Exception(
-      "Lógica de substituição falhou: não encontrou quadro livre nem página válida para substituir.",
-    );
+    entradaVitima.bitValido = false;
+    entradaVitima.possuiSegundaChance = true;
+    entradaVitima.bitModificado = false;
+
+    await reescreverTabelaDePaginas(dadosPageTable);
+
+    return quadroDaVitima;
   }
 }
