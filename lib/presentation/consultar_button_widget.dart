@@ -1,11 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:so_m2/core/exibirresultados_service.dart';
 import 'package:so_m2/core/util_service.dart';
 import 'package:so_m2/model/memory_data_model.dart';
 import 'package:so_m2/model/page_table_data_model.dart';
 import 'package:so_m2/model/tlb_data_model.dart';
-import 'package:so_m2/presentation/exibirresultados_dialog.dart';
 
 class ConsultarButtonWidget extends StatelessWidget {
   final TextEditingController endereco;
@@ -18,119 +18,6 @@ class ConsultarButtonWidget extends StatelessWidget {
     required this.numeroBits,
     required this.tamanhoDeslocamento,
   });
-
-  void encontrouNaTlb(
-    List<MemoryDataModel> dadosMemoriaPrincipal,
-    TlbDataModel resultadoTlb,
-    int enderecoFisico,
-    int deslocamento,
-    BuildContext context,
-  ) {
-    final resultado = dadosMemoriaPrincipal[enderecoFisico];
-
-    final mensagem =
-        'TLB HIT!\n'
-        'Endereço Virtual: ${endereco.text}\n'
-        'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
-        'Deslocamento: $deslocamento\n'
-        'Valor: ${resultado.valor}';
-
-    ExibirResultadosDialog.show(context, mensagem: mensagem);
-  }
-
-  void encontrouNaTabelaDePaginas(
-    List<MemoryDataModel> dadosMemoriaPrincipal,
-    List<TlbDataModel> dadosTlb,
-    PageTableDataModel resultadoPageTable,
-    int enderecoFisico,
-    int deslocamento,
-    BuildContext context,
-  ) async {
-    final resultado = dadosMemoriaPrincipal[enderecoFisico];
-
-    atualizarTlb(
-      resultadoPageTable.numeroQuadroFisico,
-      resultadoPageTable.numeroQuadroFisico,
-      dadosTlb,
-    );
-
-    await reescreverTlb(dadosTlb);
-
-    final mensagem =
-        'TLB HIT!\n'
-        'Endereço Virtual: ${endereco.text}\n'
-        'Número da Página Virtual: ${resultadoPageTable.numeroQuadroFisico}\n'
-        'Deslocamento: $deslocamento\n'
-        'Valor: ${resultado.valor}';
-
-    ExibirResultadosDialog.show(context, mensagem: mensagem);
-  }
-
-  Future<void> buscarNaBackingStore(
-    int numeroPaginaVirtual,
-    int deslocamento,
-    List<MemoryDataModel> dadosBackingStore,
-    List<PageTableDataModel> dadosPageTable,
-    BuildContext context,
-    List<MemoryDataModel> dadosMemoriaPrincipal,
-    int tamanhoDeslocamento,
-    List<TlbDataModel> dadosTlb,
-  ) async {
-    int quadroFisicoEscolhido = await UtilService()
-        .obterQuadroFisicoParaNovaPagina(
-          dadosPageTable: dadosPageTable,
-          dadosMemoriaPrincipal: dadosMemoriaPrincipal,
-          dadosBackingStore: dadosBackingStore,
-          tamanhoDeslocamento: tamanhoDeslocamento,
-        );
-
-    for (int i = 0; i < tamanhoDeslocamento; i++) {
-      int indiceBackingStore = (numeroPaginaVirtual * tamanhoDeslocamento) + i;
-      int indiceMemoriaPrincipal =
-          (quadroFisicoEscolhido * tamanhoDeslocamento) + i;
-
-      if (indiceBackingStore < dadosBackingStore.length &&
-          indiceMemoriaPrincipal < dadosMemoriaPrincipal.length) {
-        dadosMemoriaPrincipal[indiceMemoriaPrincipal] = MemoryDataModel(
-          valor: dadosBackingStore[indiceBackingStore].valor,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erro ao carregar página: índice fora dos limites."),
-          ),
-        );
-        return;
-      }
-    }
-    reescreverDataMemory(dadosMemoriaPrincipal);
-
-    atualizarTabelaDePaginasCorrigida(
-      numeroPaginaVirtual,
-      quadroFisicoEscolhido,
-      dadosPageTable,
-    );
-    await reescreverTabelaDePaginas(dadosPageTable);
-
-    atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
-
-    await reescreverTlb(dadosTlb);
-
-    int enderecoFisicoFinal =
-        (quadroFisicoEscolhido * tamanhoDeslocamento) + deslocamento;
-    final valorFinalLido = dadosMemoriaPrincipal[enderecoFisicoFinal].valor;
-
-    final mensagem =
-        'TLB MISS!\n'
-        'PAGE FAULT!\n'
-        'Endereço Virtual: ${endereco.text}\n'
-        'Número do Quadro Físico: $enderecoFisicoFinal\n'
-        'Deslocamento: $deslocamento\n'
-        'Valor: $valorFinalLido';
-
-    ExibirResultadosDialog.show(context, mensagem: mensagem);
-  }
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -206,11 +93,12 @@ class ConsultarButtonWidget extends StatelessWidget {
             int enderecoFisico =
                 (resultadoTlb.numeroQuadroFisico * tamanhoDeslocamento) +
                 deslocamento;
-            encontrouNaTlb(
+            ExibirResultadosService().encontrouNaTlb(
               dadosMemoriaPrincipal,
               resultadoTlb,
               enderecoFisico,
               deslocamento,
+              endereco,
               context,
             );
             return;
@@ -226,18 +114,19 @@ class ConsultarButtonWidget extends StatelessWidget {
                 (resultadoPageTable.numeroQuadroFisico * tamanhoDeslocamento) +
                 deslocamento;
 
-            encontrouNaTabelaDePaginas(
+            ExibirResultadosService().encontrouNaTabelaDePaginas(
               dadosMemoriaPrincipal,
               dadosTlb,
               resultadoPageTable,
               enderecoFisico,
               deslocamento,
+              endereco,
               context,
             );
             return;
           }
 
-          await buscarNaBackingStore(
+          ExibirResultadosService().buscarNaBackingStore(
             numeroPaginaVirtual,
             deslocamento,
             dadosBackingStore,
@@ -246,6 +135,7 @@ class ConsultarButtonWidget extends StatelessWidget {
             dadosMemoriaPrincipal,
             tamanhoDeslocamento,
             dadosTlb,
+            endereco,
           );
         },
         style: ElevatedButton.styleFrom(

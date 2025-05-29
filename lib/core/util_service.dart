@@ -41,48 +41,71 @@ class UtilService {
         quadrosOcupados[entrada.numeroQuadroFisico] = true;
       }
     }
-
     for (int i = 0; i < numQuadrosFisicos; i++) {
       if (!quadrosOcupados[i]) {
         return i;
       }
     }
 
-    int vitimaVPN = -1;
-    PageTableDataModel? entradaVitima;
+    for (int i = 0; i < dadosPageTable.length; i++) {
+      PageTableDataModel candidata = dadosPageTable[i];
+      if (candidata.bitValido && !candidata.bitAcesso) {
+        int quadroDaVitima = candidata.numeroQuadroFisico;
+        int vitimaVPN = i;
+        if (candidata.bitModificado) {
+          for (
+            int deslocamento = 0;
+            deslocamento < tamanhoDeslocamento;
+            deslocamento++
+          ) {
+            int idxMemoria =
+                (quadroDaVitima * tamanhoDeslocamento) + deslocamento;
+            int idxBackingStore =
+                (vitimaVPN * tamanhoDeslocamento) + deslocamento;
+            if (idxMemoria < dadosMemoriaPrincipal.length &&
+                idxBackingStore < dadosBackingStore.length) {
+              dadosBackingStore[idxBackingStore] =
+                  dadosMemoriaPrincipal[idxMemoria];
+            }
+          }
+          reescreverBackingStore(dadosBackingStore);
+        }
+        candidata.bitValido = false;
+        await reescreverTabelaDePaginas(dadosPageTable);
+        return quadroDaVitima;
+      }
+    }
 
     for (int i = 0; i < dadosPageTable.length; i++) {
-      if (dadosPageTable[i].bitValido) {
-        vitimaVPN = i;
-        entradaVitima = dadosPageTable[i];
-        break;
-      }
-    }
+      PageTableDataModel candidata = dadosPageTable[i];
+      if (candidata.bitValido) {
+        candidata.bitAcesso = false;
 
-    if (entradaVitima == null) {
-      throw Exception(
-        "Não foi possível selecionar uma página vítima, mas a memória está cheia.",
-      );
-    }
+        int quadroDaVitima = candidata.numeroQuadroFisico;
+        int vitimaVPN = i;
 
-    int quadroDaVitima = entradaVitima.numeroQuadroFisico;
-
-    if (entradaVitima.bitModificado) {
-      for (
-        int deslocamento = 0;
-        deslocamento < tamanhoDeslocamento;
-        deslocamento++
-      ) {
-        int idxMemoria = (quadroDaVitima * tamanhoDeslocamento) + deslocamento;
-        int idxBackingStore = (vitimaVPN * tamanhoDeslocamento) + deslocamento;
-
-        if (idxMemoria < dadosMemoriaPrincipal.length &&
-            idxBackingStore < dadosBackingStore.length) {
-          dadosBackingStore[idxBackingStore] =
-              dadosMemoriaPrincipal[idxMemoria];
+        if (candidata.bitModificado) {
+          for (
+            int deslocamento = 0;
+            deslocamento < tamanhoDeslocamento;
+            deslocamento++
+          ) {
+            int idxMemoria =
+                (quadroDaVitima * tamanhoDeslocamento) + deslocamento;
+            int idxBackingStore =
+                (vitimaVPN * tamanhoDeslocamento) + deslocamento;
+            if (idxMemoria < dadosMemoriaPrincipal.length &&
+                idxBackingStore < dadosBackingStore.length) {
+              dadosBackingStore[idxBackingStore] =
+                  dadosMemoriaPrincipal[idxMemoria];
+            }
+          }
+          await reescreverBackingStore(dadosBackingStore);
         }
+        candidata.bitValido = false;
+        await reescreverTabelaDePaginas(dadosPageTable);
+        return quadroDaVitima;
       }
-      await reescreverBackingStore(dadosBackingStore);
     }
 
     entradaVitima.bitValido = false;
