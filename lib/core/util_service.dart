@@ -68,7 +68,7 @@ class UtilService {
                   dadosMemoriaPrincipal[idxMemoria];
             }
           }
-          reescreverBackingStore(dadosBackingStore);
+          await reescreverBackingStore(dadosBackingStore);
         }
         candidata.bitValido = false;
         await reescreverTabelaDePaginas(dadosPageTable);
@@ -108,12 +108,6 @@ class UtilService {
       }
     }
 
-    entradaVitima.bitValido = false;
-    entradaVitima.possuiSegundaChance = true;
-    entradaVitima.bitModificado = false;
-
-    await reescreverTabelaDePaginas(dadosPageTable);
-
-    return quadroDaVitima;
+    throw Exception('Nenhuma vítima encontrada.');
   }
 }
