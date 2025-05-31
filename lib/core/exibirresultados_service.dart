@@ -28,6 +28,7 @@ class ExibirResultadosService {
     final mensagem =
         'TLB HIT!\n'
         'Endereço Virtual: ${endereco.text}\n'
+        'Número da Página Virtual: ${resultadoTlb.numeroPaginaVirtual}\n'
         'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
         'Valor: ${resultado.valor}';
@@ -41,6 +42,8 @@ class ExibirResultadosService {
     PageTableDataModel resultadoPageTable,
     int enderecoFisico,
     int deslocamento,
+    int bitsDeslocamento,
+    int enderecoDecimal,
     TextEditingController endereco,
     BuildContext context,
   ) async {
@@ -55,9 +58,11 @@ class ExibirResultadosService {
     await reescreverTlb(dadosTlb);
 
     final mensagem =
-        'TLB HIT!\n'
+        'TLB MISS!\n'
+        'PAGE HIT!\n'
         'Endereço Virtual: ${endereco.text}\n'
-        'Número da Página Virtual: ${resultadoPageTable.numeroQuadroFisico}\n'
+        'Número da Página Virtual: ${enderecoDecimal >> bitsDeslocamento}\n'
+        'Número do Quadro Físico: ${resultadoPageTable.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
         'Valor: ${resultado.valor}';
 
