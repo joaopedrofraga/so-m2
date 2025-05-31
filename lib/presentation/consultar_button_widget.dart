@@ -120,6 +120,8 @@ class ConsultarButtonWidget extends StatelessWidget {
               resultadoPageTable,
               enderecoFisico,
               deslocamento,
+              bitsDeslocamento,
+              enderecoDecimal,
               endereco,
               context,
             );
