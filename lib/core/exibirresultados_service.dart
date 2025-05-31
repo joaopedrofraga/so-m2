@@ -88,6 +88,7 @@ class ExibirResultadosService {
           tamanhoDeslocamento: tamanhoDeslocamento,
         );
 
+    // copiar pagina inteira
     for (int i = 0; i < tamanhoDeslocamento; i++) {
       int indiceBackingStore = (numeroPaginaVirtual * tamanhoDeslocamento) + i;
       int indiceMemoriaPrincipal =
