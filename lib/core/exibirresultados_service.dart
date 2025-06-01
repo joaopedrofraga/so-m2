@@ -79,7 +79,10 @@ class ExibirResultadosService {
     int tamanhoDeslocamento,
     List<TlbDataModel> dadosTlb,
     TextEditingController endereco,
+    int enderecoDecimal,
+    int numeroBits,
   ) async {
+    PageTableManager gerenciadorPt = PageTableManager(dadosPageTable);
     int quadroFisicoEscolhido = await UtilService()
         .obterQuadroFisicoParaNovaPagina(
           dadosPageTable: dadosPageTable,
@@ -110,11 +113,13 @@ class ExibirResultadosService {
     }
     reescreverDataMemory(dadosMemoriaPrincipal);
 
-    atualizarTabelaDePaginasCorrigida(
-      numeroPaginaVirtual,
-      quadroFisicoEscolhido,
-      dadosPageTable,
+    gerenciadorPt.atualizarTabelaDePaginas(
+      enderecoDecimal: enderecoDecimal,
+      numeroBits: numeroBits,
+      tamanhoPaginaBytes: tamanhoDeslocamento,
+      quadroFisico: quadroFisicoEscolhido,
     );
+    // Não se esqueça de persistir as alterações no arquivo
     await reescreverTabelaDePaginas(dadosPageTable);
 
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);

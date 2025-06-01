@@ -3,7 +3,7 @@ import 'dart:io';
 class PageTableDataModel {
   int numeroQuadroFisico;
   bool bitValido;
-  bool bitAcesso; // segunda chance
+  bool bitAcesso;
   bool bitModificado;
 
   PageTableDataModel({
@@ -15,6 +15,14 @@ class PageTableDataModel {
 
   factory PageTableDataModel.fromTxt(String text) {
     final parts = text.split(',');
+    if (parts.length < 4) {
+      return PageTableDataModel(
+        numeroQuadroFisico: -1,
+        bitValido: false,
+        bitAcesso: false,
+        bitModificado: false,
+      );
+    }
     return PageTableDataModel(
       numeroQuadroFisico: int.parse(parts[0]),
       bitValido: parts[1] == '1',
@@ -26,41 +34,13 @@ class PageTableDataModel {
 
 Future<List<PageTableDataModel>> loadPageTableData() async {
   final file = File('page_table.txt');
-  final contents = await file.readAsString();
-  final lines = contents.split('\n');
-  return lines.map((line) => PageTableDataModel.fromTxt(line)).toList();
-}
-
-PageTableDataModel? buscarNaTabelaDePaginas(
-  int pagVirtual,
-  List<PageTableDataModel> dadosPageTable,
-) {
-  if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
-    final entrada = dadosPageTable[pagVirtual];
-    if (entrada.bitValido && !entrada.bitAcesso) {
-      entrada.bitAcesso = true;
-      return entrada;
-    }
-  }
-  return null;
-}
-
-void atualizarTabelaDePaginasCorrigida(
-  int pagVirtual,
-  int quadroFisico,
-  List<PageTableDataModel> dadosPageTable,
-) {
-  if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
-    PageTableDataModel entradaParaAtualizar = dadosPageTable[pagVirtual];
-
-    entradaParaAtualizar.numeroQuadroFisico = quadroFisico;
-    entradaParaAtualizar.bitValido = true;
-    entradaParaAtualizar.bitAcesso = true;
-    entradaParaAtualizar.bitModificado = false;
-  } else {
-    print(
-      "Erro: Número da página virtual $pagVirtual está fora dos limites da tabela de páginas (0-${dadosPageTable.length - 1}).",
-    );
+  try {
+    final contents = await file.readAsString();
+    final lines =
+        contents.split('\n').where((line) => line.trim().isNotEmpty).toList();
+    return lines.map((line) => PageTableDataModel.fromTxt(line)).toList();
+  } catch (e) {
+    return [];
   }
 }
 
@@ -75,20 +55,98 @@ Future<void> reescreverTabelaDePaginas(
                 '${entrada.numeroQuadroFisico},${entrada.bitValido ? 1 : 0},${entrada.bitAcesso ? 1 : 0},${entrada.bitModificado ? 1 : 0}',
           )
           .toList();
-
   await file.writeAsString(lines.join('\n'));
 }
 
-// bool possuiNaTabelaDePaginas(
-//   int pagVirtual,
-//   List<PageTableDataModel> dadosPageTable,
-// ) {
-//   if (pagVirtual >= 0 && pagVirtual < dadosPageTable.length) {
-//     final PageTableDataModel entrada = dadosPageTable[pagVirtual];
+class PageTableManager {
+  final List<PageTableDataModel> _pageTableEntries;
 
-//     if (entrada.bitValido) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
+  PageTableManager(this._pageTableEntries);
+
+  int _getBitsDeslocamento(int tamanhoPaginaBytes) {
+    if (tamanhoPaginaBytes == 256) return 8;
+    if (tamanhoPaginaBytes == 1024) return 10;
+    if (tamanhoPaginaBytes == 4096) return 12;
+    throw ArgumentError("Tamanho de página inválido: $tamanhoPaginaBytes");
+  }
+
+  PageTableDataModel? buscarNaTabelaDePaginas({
+    required int enderecoDecimal,
+    required int numeroBits,
+    required int tamanhoPaginaBytes,
+  }) {
+    int bitsDeslocamento = _getBitsDeslocamento(tamanhoPaginaBytes);
+    int indiceFinalNaTabela;
+
+    if (numeroBits == 32 && tamanhoPaginaBytes == 4096) {
+      int vpnGlobal = enderecoDecimal >> bitsDeslocamento;
+
+      int p1Index = (vpnGlobal >> 10) & 0x3FF;
+      int p2Index = vpnGlobal & 0x3FF;
+
+      if (p1Index == 0 && p2Index >= 0 && p2Index < _pageTableEntries.length) {
+        indiceFinalNaTabela = p2Index;
+      } else {
+        return null;
+      }
+    } else {
+      int pagVirtualLinear = enderecoDecimal >> bitsDeslocamento;
+      if (pagVirtualLinear >= 0 &&
+          pagVirtualLinear < _pageTableEntries.length) {
+        indiceFinalNaTabela = pagVirtualLinear;
+      } else {
+        return null;
+      }
+    }
+
+    if (indiceFinalNaTabela >= 0 &&
+        indiceFinalNaTabela < _pageTableEntries.length) {
+      final entrada = _pageTableEntries[indiceFinalNaTabela];
+      if (entrada.bitValido) {
+        entrada.bitAcesso = true;
+        return entrada;
+      }
+    }
+    return null;
+  }
+
+  void atualizarTabelaDePaginas({
+    required int enderecoDecimal,
+    required int numeroBits,
+    required int tamanhoPaginaBytes,
+    required int quadroFisico,
+  }) {
+    int bitsDeslocamento = _getBitsDeslocamento(tamanhoPaginaBytes);
+    int indiceFinalNaTabela;
+
+    if (numeroBits == 32 && tamanhoPaginaBytes == 4096) {
+      int vpnGlobal = enderecoDecimal >> bitsDeslocamento;
+      int p1Index = (vpnGlobal >> 10) & 0x3FF;
+      int p2Index = vpnGlobal & 0x3FF;
+
+      if (p1Index == 0 && p2Index >= 0 && p2Index < _pageTableEntries.length) {
+        indiceFinalNaTabela = p2Index;
+      } else {
+        return;
+      }
+    } else {
+      int pagVirtualLinear = enderecoDecimal >> bitsDeslocamento;
+      if (pagVirtualLinear >= 0 &&
+          pagVirtualLinear < _pageTableEntries.length) {
+        indiceFinalNaTabela = pagVirtualLinear;
+      } else {
+        return;
+      }
+    }
+
+    if (indiceFinalNaTabela >= 0 &&
+        indiceFinalNaTabela < _pageTableEntries.length) {
+      PageTableDataModel entradaParaAtualizar =
+          _pageTableEntries[indiceFinalNaTabela];
+      entradaParaAtualizar.numeroQuadroFisico = quadroFisico;
+      entradaParaAtualizar.bitValido = true;
+      entradaParaAtualizar.bitAcesso = true;
+      entradaParaAtualizar.bitModificado = false;
+    } else {}
+  }
+}

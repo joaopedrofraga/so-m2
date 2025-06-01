@@ -26,9 +26,10 @@ class ConsultarButtonWidget extends StatelessWidget {
       child: ElevatedButton(
         onPressed: () async {
           final dadosTlb = await loadTlbData();
-          final dadosPageTable = await loadPageTableData();
           final dadosMemoriaPrincipal = await loadDataMemory();
           final dadosBackingStore = await loadBackingStore();
+          List<PageTableDataModel> dadosPageTable = await loadPageTableData();
+          PageTableManager gerenciadorPt = PageTableManager(dadosPageTable);
 
           if (endereco.text.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -104,10 +105,12 @@ class ConsultarButtonWidget extends StatelessWidget {
             return;
           }
 
-          final resultadoPageTable = buscarNaTabelaDePaginas(
-            numeroPaginaVirtual,
-            dadosPageTable,
-          );
+          PageTableDataModel? resultadoPageTable = gerenciadorPt
+              .buscarNaTabelaDePaginas(
+                enderecoDecimal: enderecoDecimal,
+                numeroBits: numeroBits,
+                tamanhoPaginaBytes: tamanhoDeslocamento,
+              );
 
           if (resultadoPageTable != null) {
             int enderecoFisico =
@@ -138,6 +141,8 @@ class ConsultarButtonWidget extends StatelessWidget {
             tamanhoDeslocamento,
             dadosTlb,
             endereco,
+            enderecoDecimal,
+            numeroBits,
           );
         },
         style: ElevatedButton.styleFrom(
