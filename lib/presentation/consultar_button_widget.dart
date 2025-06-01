@@ -105,12 +105,11 @@ class ConsultarButtonWidget extends StatelessWidget {
             return;
           }
 
-          PageTableDataModel? resultadoPageTable = gerenciadorPt
-              .buscarNaTabelaDePaginas(
-                enderecoDecimal: enderecoDecimal,
-                numeroBits: numeroBits,
-                tamanhoPaginaBytes: tamanhoDeslocamento,
-              );
+          final resultadoPageTable = gerenciadorPt.buscarNaTabelaDePaginas(
+            enderecoDecimal: enderecoDecimal,
+            numeroBits: numeroBits,
+            tamanhoPaginaBytes: tamanhoDeslocamento,
+          );
 
           if (resultadoPageTable != null) {
             int enderecoFisico =

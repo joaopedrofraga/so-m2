@@ -119,7 +119,7 @@ class ExibirResultadosService {
       tamanhoPaginaBytes: tamanhoDeslocamento,
       quadroFisico: quadroFisicoEscolhido,
     );
-    // Não se esqueça de persistir as alterações no arquivo
+
     await reescreverTabelaDePaginas(dadosPageTable);
 
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
