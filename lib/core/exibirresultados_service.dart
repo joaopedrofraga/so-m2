@@ -31,6 +31,7 @@ class ExibirResultadosService {
         'Número da Página Virtual: ${resultadoTlb.numeroPaginaVirtual}\n'
         'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Físico: $enderecoFisico\n'
         'Valor: ${resultado.valor}';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);
@@ -64,6 +65,7 @@ class ExibirResultadosService {
         'Número da Página Virtual: ${enderecoDecimal >> bitsDeslocamento}\n'
         'Número do Quadro Físico: ${resultadoPageTable.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Físico: $enderecoFisico\n'
         'Valor: ${resultado.valor}';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);
@@ -134,8 +136,10 @@ class ExibirResultadosService {
         'TLB MISS!\n'
         'PAGE FAULT!\n'
         'Endereço Virtual: ${endereco.text}\n'
-        'Número do Quadro Físico: $enderecoFisicoFinal\n'
+        'Número da Página Virtual: $numeroPaginaVirtual\n'
+        'Número do Quadro Físico: $quadroFisicoEscolhido\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Final: $enderecoFisicoFinal\n'
         'Valor: $valorFinalLido';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);
