@@ -31,6 +31,7 @@ class ExibirResultadosService {
         'Número da Página Virtual: ${resultadoTlb.numeroPaginaVirtual}\n'
         'Número do Quadro Físico: ${resultadoTlb.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Físico: ${enderecoFisico + 1}\n'
         'Valor: ${resultado.valor}';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);
@@ -64,6 +65,7 @@ class ExibirResultadosService {
         'Número da Página Virtual: ${enderecoDecimal >> bitsDeslocamento}\n'
         'Número do Quadro Físico: ${resultadoPageTable.numeroQuadroFisico}\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Físico: ${enderecoFisico + 1}\n'
         'Valor: ${resultado.valor}';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);
@@ -79,7 +81,10 @@ class ExibirResultadosService {
     int tamanhoDeslocamento,
     List<TlbDataModel> dadosTlb,
     TextEditingController endereco,
+    int enderecoDecimal,
+    int numeroBits,
   ) async {
+    PageTableManager gerenciadorPt = PageTableManager(dadosPageTable);
     int quadroFisicoEscolhido = await UtilService()
         .obterQuadroFisicoParaNovaPagina(
           dadosPageTable: dadosPageTable,
@@ -110,11 +115,13 @@ class ExibirResultadosService {
     }
     reescreverDataMemory(dadosMemoriaPrincipal);
 
-    atualizarTabelaDePaginasCorrigida(
-      numeroPaginaVirtual,
-      quadroFisicoEscolhido,
-      dadosPageTable,
+    gerenciadorPt.atualizarTabelaDePaginas(
+      enderecoDecimal: enderecoDecimal,
+      numeroBits: numeroBits,
+      tamanhoPaginaBytes: tamanhoDeslocamento,
+      quadroFisico: quadroFisicoEscolhido,
     );
+
     await reescreverTabelaDePaginas(dadosPageTable);
 
     atualizarTlb(numeroPaginaVirtual, quadroFisicoEscolhido, dadosTlb);
@@ -129,8 +136,10 @@ class ExibirResultadosService {
         'TLB MISS!\n'
         'PAGE FAULT!\n'
         'Endereço Virtual: ${endereco.text}\n'
-        'Número do Quadro Físico: $enderecoFisicoFinal\n'
+        'Número da Página Virtual: $numeroPaginaVirtual\n'
+        'Número do Quadro Físico: $quadroFisicoEscolhido\n'
         'Deslocamento: $deslocamento\n'
+        'Endereço Final: ${enderecoFisicoFinal + 1}\n'
         'Valor: $valorFinalLido';
 
     ExibirResultadosDialog.show(context, mensagem: mensagem);

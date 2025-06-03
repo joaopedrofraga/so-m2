@@ -79,7 +79,7 @@ class UtilService {
     for (int i = 0; i < dadosPageTable.length; i++) {
       PageTableDataModel candidata = dadosPageTable[i];
       if (candidata.bitValido) {
-        candidata.bitAcesso = false;
+        //candidata.bitAcesso = false;
 
         int quadroDaVitima = candidata.numeroQuadroFisico;
         int vitimaVPN = i;
